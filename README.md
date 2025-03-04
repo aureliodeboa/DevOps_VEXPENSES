@@ -323,8 +323,8 @@ Siga os passos abaixo para rodar o código Terraform:
 ### 1. Clone o repositório (se aplicável)
 Se o código estiver em um repositório Git, clone-o:
 ```bash
-git clone <https://github.com/aureliodeboa/Devolps--VEXPENSES>
-cd <Devolps--VEXPENSES>
+git clone <https://github.com/aureliodeboa/DevOps_VEXPENSES>
+cd <DevOps_VEXPENSES>
 ```
 
 ### 2. Inicialize o Terraform
