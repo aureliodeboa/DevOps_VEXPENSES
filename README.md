@@ -3,9 +3,9 @@
 
 Esse repositorio é fruto de um desafio tecnico feito para uma vaga de Devolps para Vexpenses e este readmi foi construido tendo em vista cumprir todos os requisitos solicitados.
 
-# Descrição Técnica do Código Terraform dado
+## Descrição Técnica do Código Terraform dado
 
-## Provider AWS
+### Provider AWS
 ```hcl
 provider "aws" {
   region = "us-east-1"
@@ -14,7 +14,7 @@ provider "aws" {
 - **Função**: Define o provedor AWS e a região onde os recursos serão criados.
 - **Detalhes**: O provedor AWS é configurado para usar a região `us-east-1`.
 
-## Variáveis
+### Variáveis
 ```hcl
 variable "projeto" {
   description = "Nome do projeto"
@@ -33,7 +33,7 @@ variable "candidato" {
   - `projeto`: Armazena o nome do projeto, com valor padrão `"VExpenses"`.
   - `candidato`: Armazena o nome do candidato, com valor padrão `"SeuNome"`.
 
-## Chave Privada e Key Pair
+### Chave Privada e Key Pair
 ```hcl
 resource "tls_private_key" "ec2_key" {
   algorithm = "RSA"
@@ -50,7 +50,7 @@ resource "aws_key_pair" "ec2_key_pair" {
   - `tls_private_key`: Gera uma chave privada RSA de 2048 bits.
   - `aws_key_pair`: Cria uma chave publica   usando a chave privada gerada. Temos assim o par de chaves.
 
-## VPC
+### VPC
 ```hcl
 resource "aws_vpc" "main_vpc" {
   cidr_block           = "10.0.0.0/16"
@@ -68,7 +68,7 @@ resource "aws_vpc" "main_vpc" {
   - `enable_dns_support` e `enable_dns_hostnames`: Habilitam suporte a DNS e nomes de host.
   - `tags`: Adiciona tags para identificação.
 
-## Subnet
+### Subnet
 ```hcl
 resource "aws_subnet" "main_subnet" {
   vpc_id            = aws_vpc.main_vpc.id
@@ -87,7 +87,7 @@ resource "aws_subnet" "main_subnet" {
   - `availability_zone`: Define a zona de disponibilidade como `us-east-1a`.
   - `tags`: Adiciona tags para identificação.
 
-## Internet Gateway
+### Internet Gateway
 ```hcl
 resource "aws_internet_gateway" "main_igw" {
   vpc_id = aws_vpc.main_vpc.id
@@ -102,7 +102,7 @@ resource "aws_internet_gateway" "main_igw" {
   - `vpc_id`: Associa o Internet Gateway à VPC criada.
   - `tags`: Adiciona tags para identificação.
 
-## Route Table
+### Route Table
 ```hcl
 resource "aws_route_table" "main_route_table" {
   vpc_id = aws_vpc.main_vpc.id
@@ -123,7 +123,7 @@ resource "aws_route_table" "main_route_table" {
   - `route`: Define uma rota para todo o tráfego (`0.0.0.0/0`) para o Internet Gateway.
   - `tags`: Adiciona tags para identificação.
 
-## Route Table Association
+### Route Table Association
 ```hcl
 resource "aws_route_table_association" "main_association" {
   subnet_id      = aws_subnet.main_subnet.id
@@ -140,7 +140,7 @@ resource "aws_route_table_association" "main_association" {
   - `route_table_id`: Associa a tabela de rotas criada.
   - `tags`: Adiciona tags para identificação.
 
-## Security Group
+### Security Group
 ```hcl
 resource "aws_security_group" "main_sg" {
   name        = "${var.projeto}-${var.candidato}-sg"
@@ -177,7 +177,7 @@ resource "aws_security_group" "main_sg" {
   - `tags`: Adiciona tags para identificação.
 
 
-## AMI Debian 12
+### AMI Debian 12
 ```hcl
 data "aws_ami" "debian12" {
   most_recent = true
@@ -201,7 +201,7 @@ data "aws_ami" "debian12" {
   - `filter`: Filtra por nome e tipo de virtualização.
   - `owners`: Especifica o proprietário da AMI.
 
-## Instância EC2
+### Instância EC2
 ```hcl
 resource "aws_instance" "debian_ec2" {
   ami             = data.aws_ami.debian12.id
@@ -241,7 +241,7 @@ resource "aws_instance" "debian_ec2" {
   - `user_data`: Executa comandos de atualização ao iniciar a instância.
   - `tags`: Adiciona tags para identificação.
 
-## Outputs
+### Outputs
 ```hcl
 output "private_key" {
   description = "Chave privada para acessar a instância EC2"
@@ -261,7 +261,7 @@ output "ec2_public_ip" {
 
 
 
-#  Projeto Terraform Criado - Infraestrutura na AWS
+#Meu Projeto  Terraform com melhorias - Infraestrutura na AWS
 
 Este projeto Terraform cria uma infraestrutura básica na AWS, incluindo:
 - Um par de chaves SSH para acesso à instância EC2.
@@ -397,6 +397,8 @@ As saídas definidas no arquivo `outputs.tf` são:
  - **Uso de VPC ja existente** : O uso de uma vpc ja existente de quando voce cria uma conta na aws ao invez de criar uma do zero isso diminui os custos.
  - **Organização da estrutura do codigo** : Dividir em outros arquivos de codigo como o arquivo variables.tf e o output.tf dando assim mais organização ao codigo.
  - **Acesso SSH restrito** : Com o acesso SSH restrito a alguns Ips damos mais segurança ao sistema.
+
+Os pontos de melhorias também estão documentados no codigo com comentarios
 
 ---
 
