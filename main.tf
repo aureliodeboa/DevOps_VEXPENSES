@@ -4,10 +4,6 @@ provider "aws" {
   profile = "default"
 }
 
-
-
-
-/*
 #estabelecendo o tipo chave que ser usado e criando a chave privada 
 resource "tls_private_key" "ec2_key" {
   algorithm = "RSA"
@@ -17,12 +13,14 @@ resource "tls_private_key" "ec2_key" {
 #criando o par de chaves (publica) usando aquele algoritmo RSA, usando openSSH pem
 resource "aws_key_pair" "ec2_key_pair" {
   key_name   = "${var.projeto}-${var.candidato}-key"
-  public_key = tls_private_key.ec2_key.public_key_pem 
+  public_key = tls_private_key.ec2_key.public_key_openssh 
 }
-*/
+
 
 
 /*
+# eu deixei isso tudo comentado para enfatizar que usando os recursos ja disponiveis não é necessario criar outra VPC, sendo assim diminuindo os custos
+
 
 # criando uma vpc no nosso caso ja existe com uso free de uma conta na AWS e por isso não irei criar outra
 #pois teria custos a mais para criar 
@@ -127,7 +125,7 @@ resource "aws_security_group" "main_sg" {
     Name = "${var.projeto}-${var.candidato}-sg"
   }
 }
-/*
+
 data "aws_ami" "debian12" {
   most_recent = true
 
@@ -143,35 +141,31 @@ data "aws_ami" "debian12" {
 
   owners = ["679593333241"]
 }
-*/
 
 
-data "aws_key_pair" "estagio_teste" {
-  key_name = "estagio-teste"  # Nome do par de chaves existente
-  
-}
 
 #criando uma EC2 (uma instacia de  vm)
 resource "aws_instance" "debian_ec2" {
-  #ami             = data.aws_ami.debian12.id
-
-  ami = "ami-0cb91c7de36eed2cb"
+  
+  ami             = data.aws_ami.debian12.id
   instance_type   = "t2.micro"
   subnet_id       = var.subnet-id
-  #key_name        = aws_key_pair.ec2_key_pair.key_name
-  key_name        = data.aws_key_pair.estagio_teste.key_name
+  key_name        = aws_key_pair.ec2_key_pair.key_name
+
   
-  #security_groups = [aws_security_group.main_sg.name]
-  vpc_security_group_ids = ["sg-0b9f4c5ee9225c8c4"]
+  vpc_security_group_ids = [aws_security_group.main_sg.id]
+  
+ #security_groups = [aws_security_group.main_sg.name] havia um erro usando essa linha por isso optei pela de cima
 
   associate_public_ip_address = true
 
+#definindo tamanho do volume do disco e o tipo de codificação dos dados, e caso eu exclua o a maquina eu excluo o disco tmb
   root_block_device {
     volume_size           = 20
     volume_type           = "gp2"
     delete_on_termination = true
   }
-
+  #passo para instalar o nginx, lembrando que eu abri a porta 80 para que ele funcione
     user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
