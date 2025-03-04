@@ -6,6 +6,7 @@ Este projeto Terraform cria uma infraestrutura básica na AWS, incluindo:
 - Um grupo de segurança para permitir tráfego SSH e HTTP.
 - Configuração automática do Nginx na instância EC2.
 
+O código foi projetado para usar recursos já existentes na AWS (como VPC e Subnet) para minimizar custos e simplificar a implantação.
 ## Pré-requisitos
 
 Antes de executar este código, certifique-se de que você tem o seguinte configurado:
@@ -33,6 +34,7 @@ Antes de executar este código, certifique-se de que você tem o seguinte config
 
 3. **WSL com Ubuntu**:
    - Certifique-se de que o WSL (Windows Subsystem for Linux) com Ubuntu está instalado e funcionando corretamente.
+   - Ou esteja usando Ubuntu de forma nativa.
 
 ---
 
