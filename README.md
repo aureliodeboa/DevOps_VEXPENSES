@@ -261,7 +261,7 @@ output "ec2_public_ip" {
 
 
 
-#Meu Projeto  Terraform com melhorias - Infraestrutura na AWS
+# Meu Projeto  Terraform com as melhorias e modificações - Infraestrutura na AWS
 
 Este projeto Terraform cria uma infraestrutura básica na AWS, incluindo:
 - Um par de chaves SSH para acesso à instância EC2.
