@@ -1,4 +1,267 @@
-# Projeto Terraform - Infraestrutura na AWS
+
+# Projeto Terraform - Infraestrutura na AWS Desafio tecnico Vexpenses
+
+Esse repositorio é fruto de um desafio tecnico feito para uma vaga de Devolps para Vexpenses e este readmi foi construido tendo em vista cumprir todos os requisitos solicitados.
+
+# Descrição Técnica do Código Terraform dado
+
+## Provider AWS
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+```
+- **Função**: Define o provedor AWS e a região onde os recursos serão criados.
+- **Detalhes**: O provedor AWS é configurado para usar a região `us-east-1`.
+
+## Variáveis
+```hcl
+variable "projeto" {
+  description = "Nome do projeto"
+  type        = string
+  default     = "VExpenses"
+}
+
+variable "candidato" {
+  description = "Nome do candidato"
+  type        = string
+  default     = "SeuNome"
+}
+```
+- **Função**: Define variáveis que podem ser reutilizadas em todo o código.
+- **Detalhes**:
+  - `projeto`: Armazena o nome do projeto, com valor padrão `"VExpenses"`.
+  - `candidato`: Armazena o nome do candidato, com valor padrão `"SeuNome"`.
+
+## Chave Privada e Key Pair
+```hcl
+resource "tls_private_key" "ec2_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+resource "aws_key_pair" "ec2_key_pair" {
+  key_name   = "${var.projeto}-${var.candidato}-key"
+  public_key = tls_private_key.ec2_key.public_key_openssh
+}
+```
+- **Função**: Gera uma chave privada RSA (criptografia assimetrica) e cria um key pair.
+- **Detalhes**:
+  - `tls_private_key`: Gera uma chave privada RSA de 2048 bits.
+  - `aws_key_pair`: Cria uma chave publica   usando a chave privada gerada. Temos assim o par de chaves.
+
+## VPC
+```hcl
+resource "aws_vpc" "main_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name = "${var.projeto}-${var.candidato}-vpc"
+  }
+}
+```
+- **Função**: Cria uma VPC (Virtual Private Cloud) na AWS.
+- **Detalhes**:
+  - `cidr_block`: Define o bloco CIDR da VPC como `10.0.0.0/16`.
+  - `enable_dns_support` e `enable_dns_hostnames`: Habilitam suporte a DNS e nomes de host.
+  - `tags`: Adiciona tags para identificação.
+
+## Subnet
+```hcl
+resource "aws_subnet" "main_subnet" {
+  vpc_id            = aws_vpc.main_vpc.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "${var.projeto}-${var.candidato}-subnet"
+  }
+}
+```
+- **Função**: Cria uma subnet dentro da VPC.
+- **Detalhes**:
+  - `vpc_id`: Associa a subnet à VPC criada.
+  - `cidr_block`: Define o bloco CIDR da subnet como `10.0.1.0/24`.
+  - `availability_zone`: Define a zona de disponibilidade como `us-east-1a`.
+  - `tags`: Adiciona tags para identificação.
+
+## Internet Gateway
+```hcl
+resource "aws_internet_gateway" "main_igw" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  tags = {
+    Name = "${var.projeto}-${var.candidato}-igw"
+  }
+}
+```
+- **Função**: Cria um Internet Gateway e o associa à VPC (para dar acesso a internet).
+- **Detalhes**:
+  - `vpc_id`: Associa o Internet Gateway à VPC criada.
+  - `tags`: Adiciona tags para identificação.
+
+## Route Table
+```hcl
+resource "aws_route_table" "main_route_table" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main_igw.id
+  }
+
+  tags = {
+    Name = "${var.projeto}-${var.candidato}-route_table"
+  }
+}
+```
+- **Função**: Cria uma tabela de rotas e define uma rota padrão para o Internet Gateway.
+- **Detalhes**:
+  - `vpc_id`: Associa a tabela de rotas à VPC criada.
+  - `route`: Define uma rota para todo o tráfego (`0.0.0.0/0`) para o Internet Gateway.
+  - `tags`: Adiciona tags para identificação.
+
+## Route Table Association
+```hcl
+resource "aws_route_table_association" "main_association" {
+  subnet_id      = aws_subnet.main_subnet.id
+  route_table_id = aws_route_table.main_route_table.id
+
+  tags = {
+    Name = "${var.projeto}-${var.candidato}-route_table_association"
+  }
+}
+```
+- **Função**: Associa a subnet à tabela de rotas.
+- **Detalhes**:
+  - `subnet_id`: Associa a subnet criada.
+  - `route_table_id`: Associa a tabela de rotas criada.
+  - `tags`: Adiciona tags para identificação.
+
+## Security Group
+```hcl
+resource "aws_security_group" "main_sg" {
+  name        = "${var.projeto}-${var.candidato}-sg"
+  description = "Permitir SSH de qualquer lugar e todo o tráfego de saída"
+  vpc_id      = aws_vpc.main_vpc.id
+
+  ingress {
+    description      = "Allow SSH from anywhere"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  egress {
+    description      = "Allow all outbound traffic"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "${var.projeto}-${var.candidato}-sg"
+  }
+}
+```
+- **Função**: Cria um grupo de segurança para controlar o tráfego de entrada e saída.
+- **Detalhes**:
+  - `ingress`: Permite tráfego SSH (porta 22) de qualquer lugar. (vunerabilidade)
+  - `egress`: Permite todo o tráfego de saída.
+  - `tags`: Adiciona tags para identificação.
+
+
+## AMI Debian 12
+```hcl
+data "aws_ami" "debian12" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["debian-12-amd64-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["679593333241"]
+}
+```
+- **Função**: Obtém a AMI mais recente do Debian 12.
+- **Detalhes**:
+  - `most_recent`: Seleciona a AMI mais recente.
+  - `filter`: Filtra por nome e tipo de virtualização.
+  - `owners`: Especifica o proprietário da AMI.
+
+## Instância EC2
+```hcl
+resource "aws_instance" "debian_ec2" {
+  ami             = data.aws_ami.debian12.id
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.main_subnet.id
+  key_name        = aws_key_pair.ec2_key_pair.key_name
+  security_groups = [aws_security_group.main_sg.name]
+
+  associate_public_ip_address = true
+
+  root_block_device {
+    volume_size           = 20
+    volume_type           = "gp2"
+    delete_on_termination = true
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              apt-get update -y
+              apt-get upgrade -y
+              EOF
+
+  tags = {
+    Name = "${var.projeto}-${var.candidato}-ec2"
+  }
+}
+```
+- **Função**: Cria uma instância EC2 com Debian 12.
+- **Detalhes**:
+  - `ami`: Usa a AMI do Debian 12 obtida anteriormente.
+  - `instance_type`: Define o tipo da instância como `t2.micro`.
+  - `subnet_id`: Associa a instância à subnet criada.
+  - `key_name`: Usa o key pair criado.
+  - `security_groups`: Associa o grupo de segurança criado.
+  - `associate_public_ip_address`: Associa um IP público à instância.
+  - `root_block_device`: Configura o volume raiz com 20 GB do tipo `gp2`.
+  - `user_data`: Executa comandos de atualização ao iniciar a instância.
+  - `tags`: Adiciona tags para identificação.
+
+## Outputs
+```hcl
+output "private_key" {
+  description = "Chave privada para acessar a instância EC2"
+  value       = tls_private_key.ec2_key.private_key_pem
+  sensitive   = true
+}
+
+output "ec2_public_ip" {
+  description = "Endereço IP público da instância EC2"
+  value       = aws_instance.debian_ec2.public_ip
+}
+```
+- **Função**: Define saídas que podem ser usadas após a execução do Terraform.
+- **Detalhes**:
+  - `private_key`: Exibe a chave privada gerada (sensível).
+  - `ec2_public_ip`: Exibe o IP público da instância EC2 criada.
+
+
+
+#  Projeto Terraform Criado - Infraestrutura na AWS
 
 Este projeto Terraform cria uma infraestrutura básica na AWS, incluindo:
 - Um par de chaves SSH para acesso à instância EC2.
@@ -34,7 +297,7 @@ Antes de executar este código, certifique-se de que você tem o seguinte config
 
 3. **WSL com Ubuntu**:
    - Certifique-se de que o WSL (Windows Subsystem for Linux) com Ubuntu está instalado e funcionando corretamente.
-   - Ou esteja usando Ubuntu de forma nativa.
+   - Ou esteja usando Ubuntu de forma nativa.\
 
 ---
 
@@ -130,15 +393,11 @@ As saídas definidas no arquivo `outputs.tf` são:
 
 ---
 
-## Considerações Finais
-
-- **Custos**: Este projeto cria recursos na AWS que podem gerar custos. Certifique-se de destruir a infraestrutura após o uso.
-- **Segurança**: A chave privada gerada pelo Terraform deve ser mantida em segurança. Não a compartilhe publicamente.
-- **Personalização**: Sinta-se à vontade para modificar o código para atender às suas necessidades específicas.
+## Pontos de melhorias
+ - **Uso de VPC ja existente** : O uso de uma vpc ja existente de quando voce cria uma conta na aws ao invez de criar uma do zero isso diminui os custos.
+ - **Organização da estrutura do codigo** : Dividir em outros arquivos de codigo como o arquivo variables.tf e o output.tf dando assim mais organização ao codigo.
+ - **Acesso SSH restrito** : Com o acesso SSH restrito a alguns Ips damos mais segurança ao sistema.
 
 ---
 
-## Autor
-
-Este projeto foi desenvolvido por @aureliodeboa como parte de um teste técnico para a vexpenses.
 

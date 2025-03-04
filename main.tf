@@ -19,11 +19,11 @@ resource "aws_key_pair" "ec2_key_pair" {
 
 
 /*
-# eu deixei isso tudo comentado para enfatizar que usando os recursos já disponiveis não é necessario criar outra VPC, sendo assim diminuindo os custos
+# eu deixei isso tudo comentado para enfatizar que usando os recursos já disponiveis não é necessario criar outra VPC e assim diminuindo os custos
 
 
 # criando uma vpc no nosso caso ja existe com uso free de uma conta na AWS e por isso não irei criar outra
-#pois teria custos a mais para criar 
+#pois poderia ter custos a mais para criar 
 
 
 
@@ -37,7 +37,7 @@ tags = {
 }
 }
 
-# e aqui iria criar uma subnet para essa vpc, pois para rodar um sevico na aws é necessario pelo menos uma subnet necessariamente
+# e aqui iria criar uma subnet para essa vpc, pois para rodar um serviço na aws é necessario pelo menos uma subnet necessariamente
 
 resource "aws_subnet" "main_subnet" {
 vpc_id            = aws_vpc.main_vpc.id
@@ -86,7 +86,6 @@ tags = {
 */
 
 #regras  de entrada e saida do grupo de segurança  e a criação do proprio grupo de segurança
-
 resource "aws_security_group" "main_sg" {
   name        = "${var.projeto}-${var.candidato}-sg"
   description = "Permitir SSH de qualquer lugar e todo o trafego de saida"
@@ -95,18 +94,17 @@ resource "aws_security_group" "main_sg" {
 
 
   # Regras de entrada
-  #regra do ssh sempre na porta 22, entretanto o ideal seria definir um ip especifico para entrar via ssh
-  #pois assim teriamos mais segurança, se trantando de um teste tecnico queria deixar isso claro, entendo que é uma vunerabilidade e em um caso real
-  #seria o ideal restringir o acesso a ips especificos
+  #regra do ssh sempre na porta 22, entretanto o ideal é sempre definir um ip especifico para entrar via ssh
+  #para garantir  mais segurança  do que  permitir acesso de qualquer ip de qualquer lugar nesse caso os ips permitidos estão no arquivo de variaveis
   ingress {
-    description      = "Allow SSH from anywhere"
+    description      = "SSH restrito"
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    cidr_blocks = var.allowed_ssh_ips
+
   }
-  # Regras de entrada para o nginx precisa da porta 80 liberada para rodar
+  # Regras de entrada para o nginx precisa da porta 80 liberada para servir paginas http
   ingress {
     description      = "Allow HTTP from anywhere"
     from_port        = 80
@@ -115,7 +113,14 @@ resource "aws_security_group" "main_sg" {
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
-
+  # Regras de entrada para o nginx precisa da porta 443 para servir paginas https
+  ingress {
+    description      = "Permite HTTPS"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
   # Regras de saída 
   egress {
     description      = "Allow all outbound traffic"
@@ -148,8 +153,6 @@ data "aws_ami" "debian12" {
   owners = ["679593333241"]
 }
 
-
-
 #criando uma EC2 (uma instacia de  vm), aqui sim será criado uma EC2 
 resource "aws_instance" "debian_ec2" {
   
@@ -160,9 +163,6 @@ resource "aws_instance" "debian_ec2" {
 
   
   vpc_security_group_ids = [aws_security_group.main_sg.id]
-  
- #security_groups = [aws_security_group.main_sg.name] havia um erro usando essa linha por isso optei pela de cima
-
   associate_public_ip_address = true
 
 #definindo tamanho do volume do disco e o tipo de codificação dos dados, e caso eu exclua o a maquina eu excluo o disco tmb
