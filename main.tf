@@ -4,13 +4,13 @@ provider "aws" {
   profile = "default"
 }
 
-#estabelecendo o tipo chave que ser usado e criando a chave privada 
+#estabelecendo o tipo chave que ser usado e criando a chave privada com tamanho de 2048
 resource "tls_private_key" "ec2_key" {
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
-#criando o par de chaves (publica) usando aquele algoritmo RSA, usando openSSH pem
+#criando o par de chaves (publica) usando algoritmo RSA de criptografia assimetrica, usando openSSH pem
 resource "aws_key_pair" "ec2_key_pair" {
   key_name   = "${var.projeto}-${var.candidato}-key"
   public_key = tls_private_key.ec2_key.public_key_openssh 
@@ -19,7 +19,7 @@ resource "aws_key_pair" "ec2_key_pair" {
 
 
 /*
-# eu deixei isso tudo comentado para enfatizar que usando os recursos ja disponiveis não é necessario criar outra VPC, sendo assim diminuindo os custos
+# eu deixei isso tudo comentado para enfatizar que usando os recursos já disponiveis não é necessario criar outra VPC, sendo assim diminuindo os custos
 
 
 # criando uma vpc no nosso caso ja existe com uso free de uma conta na AWS e por isso não irei criar outra
@@ -90,9 +90,14 @@ tags = {
 resource "aws_security_group" "main_sg" {
   name        = "${var.projeto}-${var.candidato}-sg"
   description = "Permitir SSH de qualquer lugar e todo o trafego de saida"
+  #aqui já estou usando o id da vpc que ja é existente quando cria-se uma conta aws
   vpc_id      = var.vpc-id
 
+
   # Regras de entrada
+  #regra do ssh sempre na porta 22, entretanto o ideal seria definir um ip especifico para entrar via ssh
+  #pois assim teriamos mais segurança, se trantando de um teste tecnico queria deixar isso claro, entendo que é uma vunerabilidade e em um caso real
+  #seria o ideal restringir o acesso a ips especificos
   ingress {
     description      = "Allow SSH from anywhere"
     from_port        = 22
@@ -126,6 +131,7 @@ resource "aws_security_group" "main_sg" {
   }
 }
 
+#aqui são definidos os dados que serão usados para a consulta da maquina da EC2, lembrando que isso aqui não cria nada, apenas busca informações
 data "aws_ami" "debian12" {
   most_recent = true
 
@@ -144,12 +150,12 @@ data "aws_ami" "debian12" {
 
 
 
-#criando uma EC2 (uma instacia de  vm)
+#criando uma EC2 (uma instacia de  vm), aqui sim será criado uma EC2 
 resource "aws_instance" "debian_ec2" {
   
   ami             = data.aws_ami.debian12.id
   instance_type   = "t2.micro"
-  subnet_id       = var.subnet-id
+  subnet_id       = var.subnet-id #todo recurso na AWS precisa de pelo menos uma subnet para funcionar, como eu desconsiderei essa criação la em cima aqui eu coloco o id de um subnet existente
   key_name        = aws_key_pair.ec2_key_pair.key_name
 
   
@@ -161,16 +167,16 @@ resource "aws_instance" "debian_ec2" {
 
 #definindo tamanho do volume do disco e o tipo de codificação dos dados, e caso eu exclua o a maquina eu excluo o disco tmb
   root_block_device {
-    volume_size           = 20
+    volume_size           = 20  # Tamanho do volume em GB
     volume_type           = "gp2"
-    delete_on_termination = true
+    delete_on_termination = true # Excluir o volume ao encerrar a instância
   }
   #passo para instalar o nginx, lembrando que eu abri a porta 80 para que ele funcione
     user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
               apt-get upgrade -y
-              apt-get install -y nginx
+              apt-get install -y nginx  
               systemctl enable nginx
               systemctl start nginx
               EOF
