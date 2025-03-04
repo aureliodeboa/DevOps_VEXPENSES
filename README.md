@@ -393,10 +393,91 @@ As saídas definidas no arquivo `outputs.tf` são:
 
 ---
 
-## Pontos de melhorias
- - **Uso de VPC ja existente** : O uso de uma vpc ja existente de quando voce cria uma conta na aws ao invez de criar uma do zero isso diminui os custos.
- - **Organização da estrutura do codigo** : Dividir em outros arquivos de codigo como o arquivo variables.tf e o output.tf dando assim mais organização ao codigo.
- - **Acesso SSH restrito** : Com o acesso SSH restrito a alguns Ips damos mais segurança ao sistema.
+## Pontos de Melhoria
+
+### 1. **Uso de VPC Existente**
+   - **Descrição**: Em vez de criar uma nova VPC do zero, é recomendável utilizar uma VPC já existente, como a VPC padrão que é criada automaticamente ao configurar uma conta na AWS.
+   - **Benefícios**:
+     - **Redução de Custos**: Evita a criação de recursos desnecessários, como subnets, gateways e tabelas de rotas, que já estão presentes na VPC padrão.
+     - **Simplicidade**: Simplifica a infraestrutura, especialmente em ambientes onde a VPC padrão já atende às necessidades do projeto.
+   - **Implementação**: Para isso, basta referenciar a VPC existente no código Terraform, utilizando o ID da VPC padrão ou de outra VPC já criada.
+
+   **Implementação**:
+   ```hcl
+         resource "aws_security_group" "main_sg" {
+      name        = "${var.projeto}-${var.candidato}-sg"
+      description = "Permitir SSH de qualquer lugar e todo o trafego de saida"
+      #aqui já estou usando o id da vpc que ja é existente  e esta no arquivo de variables.tf
+      vpc_id      = var.vpc-id
+         ...
+    }
+
+   ```
+
+---
+
+### 2. **Organização da Estrutura do Código**
+   - **Descrição**: Dividir o código Terraform em múltiplos arquivos, seguindo boas práticas de organização, como separar variáveis, outputs e recursos em arquivos distintos.
+   - **Benefícios**:
+     - **Manutenção Facilitada**: Facilita a leitura, manutenção e escalabilidade do código.
+     - **Reutilização de Código**: Permite reutilizar variáveis e outputs em outros projetos ou módulos.
+     - **Clareza**: Melhora a clareza do código, tornando-o mais modular e compreensível.
+   - **Implementação**: Criar arquivos separados, como:
+     - `variables.tf`: Para declarar todas as variáveis.
+     - `outputs.tf`: Para definir os outputs.
+     - `main.tf`: Para os recursos principais.
+
+   **Minha Estrutura**:
+   ```
+   terraform/
+   ├── main.tf
+   ├── variables.tf
+   ├── outputs.tf
+   ```
+
+---
+
+### 3. **Acesso SSH Restrito**
+   - **Descrição**: Restringir o acesso SSH à instância EC2 para endereços IPs específicos, em vez de permitir conexões de qualquer lugar (`0.0.0.0/0`).
+   - **Benefícios**:
+     - **Segurança Aprimorada**: Reduz o risco de ataques externos, limitando o acesso apenas a IPs confiáveis.
+     - **Conformidade**: Atende a melhores práticas de segurança e requisitos de conformidade.
+   - **Implementação**: Modificar as regras de entrada (`ingress`) no grupo de segurança para permitir SSH apenas de IPs específicos.
+
+   **Exemplo de Implementação**:
+   ```hcl
+   ingress {
+     description = "Allow SSH only from specific IPs"
+     from_port   = 22
+     to_port     = 22
+     protocol    = "tcp"
+     cidr_blocks = var.allowed_ssh_ips # esses ips estão nessa variavel
+   }
+   ```
+
+---
+
+### 4. **Documentação no Código**
+   - **Descrição**: Adicionar comentários no código para explicar o propósito de cada bloco de recursos, variáveis e outputs.
+   - **Benefícios**:
+     - **Facilita a Colaboração**: Auxilia outros desenvolvedores ou membros da equipe a entenderem o código rapidamente.
+     - **Manutenção Futura**: Simplifica a manutenção e atualização do código, especialmente em projetos de longa duração.
+   - **Exemplo de Comentários**:
+     ```hcl
+     # Cria uma VPC para o projeto
+     resource "aws_vpc" "main_vpc" {
+       cidr_block = "10.0.0.0/16"
+       ...
+     }
+
+     # Define o nome do projeto como variável
+     variable "projeto" {
+       description = "Nome do projeto"
+       type        = string
+       default     = "VExpenses"
+     }
+     ```
+
 
 Os pontos de melhorias também estão documentados no codigo com comentarios
 
