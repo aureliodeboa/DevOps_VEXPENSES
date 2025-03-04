@@ -1,5 +1,5 @@
 
-# Projeto Terraform - Infraestrutura na AWS Desafio tecnico Vexpenses
+#Infraestrutura na AWS Desafio técnico Vexpenses
 
 Esse repositorio é fruto de um desafio tecnico feito para uma vaga de Devolps para Vexpenses e este readmi foi construido tendo em vista cumprir todos os requisitos solicitados.
 
