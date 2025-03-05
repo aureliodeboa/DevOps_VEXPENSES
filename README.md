@@ -1,7 +1,7 @@
 
 # Infraestrutura na AWS Desafio técnico Vexpenses
 
-Esse repositorio é fruto de um desafio tecnico feito para uma vaga de DevOps para Vexpenses e este readmi foi construido tendo em vista cumprir todos os requisitos solicitados.
+Esse repositorio é fruto de um desafio tecnico feito para uma vaga de DevOps para Vexpenses e este readme foi construido tendo em vista cumprir todos os requisitos solicitados.
 
 ## Descrição Técnica do Código Terraform dado
 
@@ -296,6 +296,7 @@ Antes de executar este código, certifique-se de que você tem o seguinte config
      ```
 
 3. **WSL com Ubuntu**:
+   Este passo só pe necessario se voce estiver usando o sistema windowns.
    - Certifique-se de que o WSL (Windows Subsystem for Linux) com Ubuntu está instalado e funcionando corretamente.
    - Ou esteja usando Ubuntu de forma nativa.\
 
@@ -355,7 +356,7 @@ Após a execução bem-sucedida, o Terraform exibirá as saídas definidas no ar
   ```
 - **Endereço IP público**: Use o IP público para acessar a instância via SSH:
   ```bash
-  ssh  usuario@IPdaEC2 -i chave_privada.pem admin@$(terraform output -raw ec2_public_ip)/ ou o caminho da chave
+  ssh usuario@IP -i caminho_da_chave
   ```
 
 ### 6. Destrua a Infraestrutura (opcional)
